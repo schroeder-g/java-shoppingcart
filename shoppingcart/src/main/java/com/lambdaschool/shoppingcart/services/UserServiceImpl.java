@@ -55,6 +55,16 @@ public class UserServiceImpl
         userrepos.deleteById(id);
     }
 
+    @Override
+    public User findByName(String name) {
+        User u = userrepos.findByUsername(name.toLowerCase());
+        if (u == null)
+        {
+            throw new ResourceNotFoundException("User " + name + " not found!");
+        }
+        return u;
+    }
+
     @Transactional
     @Override
     public User save(User user)
@@ -71,4 +81,5 @@ public class UserServiceImpl
         }
         return userrepos.save(newUser);
     }
+
 }

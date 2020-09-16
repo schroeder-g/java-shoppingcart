@@ -110,6 +110,7 @@ public class CartServiceImpl
     public void delete(Cart cart,
                        Product product)
     {
+        User currentUser = cart.getUser();
         Cart updateCart = cartrepos.findById(cart.getCartid())
                 .orElseThrow(() -> new ResourceNotFoundException("Cart Id " + cart.getCartid() + " not found"));
         Product updateProduct = productrepos.findById(product.getProductid())
