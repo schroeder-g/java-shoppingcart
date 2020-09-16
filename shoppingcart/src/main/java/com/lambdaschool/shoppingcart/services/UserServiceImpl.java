@@ -69,17 +69,17 @@ public class UserServiceImpl
     @Override
     public User save(User user)
     {
-        User newUser = new User();
+        User currentUser = new User();
 
-        newUser.setUsername(user.getUsername());
-        newUser.setComments(user.getComments());
+        currentUser.setUsername(user.getUsername());
+        currentUser.setComments(user.getComments());
 
         if (user.getCarts()
                 .size() > 0)
         {
             throw new ResourceFoundException("Carts are not added through users");
         }
-        return userrepos.save(newUser);
+        return userrepos.save(currentUser);
     }
 
 }

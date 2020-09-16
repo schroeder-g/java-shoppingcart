@@ -19,29 +19,25 @@ import java.util.List;
 public class CartServiceImpl
         implements CartService
 {
-    /**
-     * Connects this service to the cart repository
-     */
+    /** Connects this service to the cart repository  */
     @Autowired
     private CartRepository cartrepos;
 
-    /**
-     * Connects this service the user repository
-     */
+    /** Connects this service the user repository */
     @Autowired
     private UserRepository userrepos;
 
-    /**
-     * Connects this service to the product repository
-     */
+    /** Connects this service to the product repository */
     @Autowired
     private ProductRepository productrepos;
 
-    /**
-     * Connects this service to the auditing service in order to get current user name
-     */
+    /** Connects this service to the auditing service in order to get current user name */
     @Autowired
     private UserAuditing userAuditing;
+
+    /** Connects this service to helper functions for authenticating user permissions.  */
+    @Autowired
+    private HelperFunctions helpFuncs;
 
     @Override
     public List<Cart> findAllByUserId(Long userid)
@@ -86,23 +82,30 @@ public class CartServiceImpl
     public Cart save(Cart cart,
                      Product product)
     {
-        Cart updateCart = cartrepos.findById(cart.getCartid())
-                .orElseThrow(() -> new ResourceNotFoundException("Cart Id " + cart.getCartid() + " not found"));
-        Product updateProduct = productrepos.findById(product.getProductid())
-                .orElseThrow(() -> new ResourceNotFoundException("Product id " + product.getProductid() + " not found"));
-
-        if (cartrepos.checkCartItems(updateCart.getCartid(), updateProduct.getProductid())
-                .getCount() > 0)
+        User currentUser = cart.getUser();
+        if(helpFuncs.isAuthorizedToMakeChange(currentUser.getUsername()))
         {
-            cartrepos.updateCartItemsQuantity(userAuditing.getCurrentAuditor()
-                                                      .get(), updateCart.getCartid(), updateProduct.getProductid(), 1);
+            Cart updateCart = cartrepos.findById(cart.getCartid())
+                    .orElseThrow(() -> new ResourceNotFoundException("Cart Id " + cart.getCartid() + " not found"));
+            Product updateProduct = productrepos.findById(product.getProductid())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product id " + product.getProductid() + " not found"));
+
+            if (cartrepos.checkCartItems(updateCart.getCartid(), updateProduct.getProductid())
+                    .getCount() > 0)
+            {
+                cartrepos.updateCartItemsQuantity(userAuditing.getCurrentAuditor()
+                        .get(), updateCart.getCartid(), updateProduct.getProductid(), 1);
+            } else
+            {
+                cartrepos.addCartItems(userAuditing.getCurrentAuditor()
+                        .get(), updateCart.getCartid(), updateProduct.getProductid());
+            }
+
+            return cartrepos.save(updateCart);
         } else
         {
-            cartrepos.addCartItems(userAuditing.getCurrentAuditor()
-                                           .get(), updateCart.getCartid(), updateProduct.getProductid());
+            throw new ResourceNotFoundException("You aren't authorized to make that change");
         }
-
-        return cartrepos.save(updateCart);
     }
 
     @Transactional
@@ -111,21 +114,28 @@ public class CartServiceImpl
                        Product product)
     {
         User currentUser = cart.getUser();
-        Cart updateCart = cartrepos.findById(cart.getCartid())
-                .orElseThrow(() -> new ResourceNotFoundException("Cart Id " + cart.getCartid() + " not found"));
-        Product updateProduct = productrepos.findById(product.getProductid())
-                .orElseThrow(() -> new ResourceNotFoundException("Product id " + product.getProductid() + " not found"));
-
-        if (cartrepos.checkCartItems(updateCart.getCartid(), updateProduct.getProductid())
-                .getCount() > 0)
+        if(helpFuncs.isAuthorizedToMakeChange(currentUser.getUsername()))
         {
-            cartrepos.updateCartItemsQuantity(userAuditing.getCurrentAuditor()
-                                                      .get(), updateCart.getCartid(), updateProduct.getProductid(), -1);
-            cartrepos.removeCartItemsQuantityZero();
-            cartrepos.removeCartWithNoProducts();
+            Cart updateCart = cartrepos.findById(cart.getCartid())
+                    .orElseThrow(() -> new ResourceNotFoundException("Cart Id " + cart.getCartid() + " not found"));
+            Product updateProduct = productrepos.findById(product.getProductid())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product id " + product.getProductid() + " not found"));
+
+            if (cartrepos.checkCartItems(updateCart.getCartid(), updateProduct.getProductid())
+                    .getCount() > 0)
+            {
+                cartrepos.updateCartItemsQuantity(userAuditing.getCurrentAuditor()
+                        .get(), updateCart.getCartid(), updateProduct.getProductid(), -1);
+                cartrepos.removeCartItemsQuantityZero();
+                cartrepos.removeCartWithNoProducts();
+            } else
+            {
+                throw new ResourceNotFoundException("Cart id " + updateCart.getCartid() + " Product id " + updateProduct.getProductid() + " combo not found");
+            }
         } else
         {
-            throw new ResourceNotFoundException("Cart id " + updateCart.getCartid() + " Product id " + updateProduct.getProductid() + " combo not found");
+            throw new ResourceNotFoundException("You aren't authorized to delete that.");
         }
+
     }
 }

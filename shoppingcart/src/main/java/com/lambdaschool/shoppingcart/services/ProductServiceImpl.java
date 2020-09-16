@@ -16,18 +16,14 @@ import java.util.List;
 public class ProductServiceImpl
         implements ProductService
 {
-    /**
-     * Connects this service to the product repository
-     */
+    /** Connects this service to the product repository */
     @Autowired
     private ProductRepository productrepos;
 
     @Autowired
     private CartRepository cartrepos;
 
-    /**
-     * Connects this service to the auditing service in order to find the current user
-     */
+    /** Connects this service to the auditing service in order to find the current user */
     @Autowired
     private UserAuditing userAuditing;
 

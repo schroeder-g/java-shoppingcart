@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
 
-@Service(value = "helperFunctions")
+@Service(value = "helperFunctionsImpl")
 public class HelperFunctionsImpl implements HelperFunctions
 {
     @Override
@@ -15,12 +15,14 @@ public class HelperFunctionsImpl implements HelperFunctions
     {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (username.equalsIgnoreCase(authentication.getName()) || authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN")))
+        if (username.equalsIgnoreCase(authentication.getName()) ||
+                authentication.getAuthorities()
+                        .contains(new SimpleGrantedAuthority("ROLE_ADMIN")))
         {
             return true;
         } else
         {
-            throw new EntityNotFoundException(authentication.getName() + " is not allowed to make changes in this domain.");
+            throw new EntityNotFoundException(authentication.getName() + " doesn't have permissions for this domain.");
         }
     }
 }
